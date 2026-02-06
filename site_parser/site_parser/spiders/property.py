@@ -2,6 +2,7 @@ from urllib.parse import urljoin
 import scrapy
 from fake_useragent import UserAgent
 from scrapy.http import HtmlResponse
+import re
 
 
 class PropertySpider(scrapy.Spider):
@@ -14,7 +15,7 @@ class PropertySpider(scrapy.Spider):
     '''
         Список разрешённых доменов, чтобы паук не ушёл далеко от нужного сайта
     '''
-    start_urls = ['https://intermark.ru/nedvizhimost-za-rubezhom/investicii-thailand']
+    start_urls = ['https://intermark.ru/nedvizhimost-za-rubezhom/emirates']
     '''
         Стартовая страница, с которой начнётся парсинг
     '''
@@ -73,16 +74,20 @@ class PropertySpider(scrapy.Spider):
         item['description'] = ' '.join([part.strip() for part in description_parts if part.strip()])
         
         # 4. Стоимость
-        item['price_usd'] = response.css('div.chose-currency1__item .point:contains("usd") + ::attr(data-text1span)').get()
-        if not item['price_usd']:
-            item['price_usd'] = response.css('div.price-text1__title span::text').get().strip()
+        # Сначала получаем "сырую" строку с ценой
+        raw_price = response.css('div.chose-currency1__item .point:contains("usd") + ::attr(data-text1span)').get()
+        if not raw_price:
+            raw_price = response.css('div.price-text1__title span::text').get()
+        
+        # Пропускаем через чистку и превращаем в int
+        item['price_usd'] = self.clean_number(raw_price)
         
         # 5. Площадь
-        area_text = response.css('div.small-information1__item.icon2::text').get().strip()
-        if area_text:
-            import re
-            area_num = re.search(r'(\d+)', area_text)
-            item['area'] = f"{area_num.group(1)} м²" if area_num else area_text.strip()
+        # Получаем строку вида "72 m2"
+        area_text = response.css('div.small-information1__item.icon2::text').get()
+        
+        # Пропускаем через чистку и превращаем в int (уйдет "m2" и пробелы)
+        item['area'] = self.clean_number(area_text)
         
         # 6. Тип объекта
         type_text = response.css('div.small-information1__item.icon1::text').get().strip()
@@ -99,4 +104,17 @@ class PropertySpider(scrapy.Spider):
         item['url'] = response.url
         
         yield item
+
+    def clean_number(self, text):
+        """
+        Вспомогательный метод: оставляет только цифры в стоимости и площади
+        Например, из "250 000 $" вернет 250000
+        и переводит в int
+        """
+        if not text:
+            return None
+        # Убираем всё, кроме цифр (удалит $, m2, пробелы и т.д.)
+        # Если есть диапазон (например "250 000 - 350 000"), берем первое число
+        numbers = re.findall(r'\d+', text.replace(' ', ''))
+        return int(numbers[0]) if numbers else None
 
