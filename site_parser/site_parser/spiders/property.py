@@ -3,6 +3,7 @@ import scrapy
 from fake_useragent import UserAgent
 from scrapy.http import HtmlResponse
 import re
+import datetime
 
 
 class PropertySpider(scrapy.Spider):
@@ -11,18 +12,16 @@ class PropertySpider(scrapy.Spider):
     '''
     name = 'property_spider'
 
+    # Список разрешённых доменов, чтобы паук не ушёл далеко от нужного сайта
     allowed_domains = ['intermark.ru']
-    '''
-        Список разрешённых доменов, чтобы паук не ушёл далеко от нужного сайта
-    '''
-    start_urls = ['https://intermark.ru/nedvizhimost-za-rubezhom/emirates']
-    '''
-        Стартовая страница, с которой начнётся парсинг
-    '''
+    # Стартовая страница, с которой начнётся парсинг
+    start_urls = ['https://intermark.ru/nedvizhimost-za-rubezhom/indonesia']
+
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ua = UserAgent()
-        #self.search_url = 'Canggu' -- Пример поиска по конкретной локации
+        #self.search_url = 'Canggu' -- Пример поиска по конкретной локации, в проекте не используется
 
     def start_requests(self):
         for url in self.start_urls:
@@ -34,9 +33,11 @@ class PropertySpider(scrapy.Spider):
         Метод парсинга главной страницы со списком объектов недвижимости
         Проходим по всем карточкам объектов
         '''
+        self.logger.info(f"Начинаем парсинг сайта: {response.url}")
         for card in response.css('div.object-card'):
             # Извлекаем ссылку на детальную страницу
             detail_url = card.css('a.object-card-main-info__link::attr(href)').get()
+            self.logger.info(f"Переход по ссылке: {detail_url}")
             
             if detail_url:
                 # Переходим на детальную страницу и вызываем parse_item
@@ -46,6 +47,7 @@ class PropertySpider(scrapy.Spider):
         next_page = response.xpath('//a[contains(text(), " вперед ")]/@href').get()
         if next_page:
         # Переходим на следующую страницу и рекурсивно вызываем parse
+            self.logger.info(f"Переход на следующую страницу: {next_page}")
             yield response.follow(next_page, self.parse)
 
             
@@ -102,7 +104,14 @@ class PropertySpider(scrapy.Spider):
         
         # 9. URL страницы
         item['url'] = response.url
-        
+
+        # 10. Дата парсинга
+        item['parse_date'] = datetime.datetime.now().strftime('%Y-%m-%d')
+
+        # 11. Время парсинга
+        item['scrape_time'] = datetime.datetime.now().isoformat()
+
+        self.logger.info(f"Спарсили объект: {item['title']} с ID: {item['object_id']}")
         yield item
 
     def clean_number(self, text):
