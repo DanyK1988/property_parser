@@ -27,14 +27,16 @@ df = spark.read.jdbc(url=jdbc_url, table="properties", properties=jdbc_propertie
 
 
 # 4. Пример аналитики: средняя цена по типу недвижимости
-analytics_df = df.filter((F.col("price_usd") > 0) & (F.col("area") > 0)) \
+analytics_df = df.filter((F.col("price_usd") > 0) & (F.col("area") > 0) & F.col("country").isNotNull()) \
     .groupBy("country", "property_type") \
     .agg(
         F.count("*").alias("count"),
         F.round(F.avg("price_usd"), 0).alias("avg_total_price"),
         F.round(F.avg(F.col("price_usd") / F.col("area")), 2).alias("avg_sqm_price"),
         F.round(F.min("price_usd"), 2).alias("min_price_unit"),
-        F.round(F.max("price_usd"), 2).alias("max_price_unit")
+        F.round(F.max("price_usd"), 2).alias("max_price_unit"),
+        F.percentile_approx("price_usd", 0.5).alias("median_price"),
+        F.max(F.to_date(F.col("parse_date"))).alias("last_parsed_date")
     ) \
     .orderBy(F.desc("country"), F.desc("property_type"))
 

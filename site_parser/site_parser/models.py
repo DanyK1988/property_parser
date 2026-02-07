@@ -17,3 +17,5 @@ class PropertyTable(Base):
     country = Column(Text)
     object_id = Column(Text)
     url = Column(Text)
+    parse_date = Column(Text)  # Можно хранить дату в текстовом формате YYYY-MM-DD
+    scrape_time = Column(Text)  # Время парсинга в ISO формате

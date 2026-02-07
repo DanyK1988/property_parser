@@ -5,7 +5,7 @@ NEWSPIDER_MODULE = "site_parser.spiders"
 
 AUTOTHROTTLE_ENABLED = True
 ROBOTSTXT_OBEY=False
-LOG_LEVEL="DEBUG"
+LOG_LEVEL='INFO' #Сменил уровень логов на INFO для уменьшения объема логов
 
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"

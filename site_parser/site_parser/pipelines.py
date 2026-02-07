@@ -48,7 +48,7 @@ class DatabasePipeline:
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
         
-        # Собираем данные ТОЛЬКО для недвижимости (убрали вакансии)
+        # Собираем данные для недвижимости
         property_data = {
             "h1": adapter.get("h1"),
             "title": adapter.get("title"),
@@ -58,7 +58,9 @@ class DatabasePipeline:
             "property_type": adapter.get("property_type"),
             "country": adapter.get("country"),
             "object_id": adapter.get("object_id"),
-            "url": adapter.get("url")
+            "url": adapter.get("url"),
+            "parse_date": adapter.get("parse_date"),
+            "scrape_time": adapter.get("scrape_time")
         }
 
         try:
