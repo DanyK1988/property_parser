@@ -108,7 +108,7 @@ class PropertySpider(scrapy.Spider):
             driver.quit()
 
     def parse_item(self, response):
-        # Основной заголовок (уже работает)
+        # Основной заголовок 
         title_raw = response.css(
             "h1::text, h2::text, h3::text, "
             ".font-heading::text, div.text-xl::text, div.text-3xl::text, "
@@ -133,7 +133,6 @@ class PropertySpider(scrapy.Spider):
         ) or None
 
         # Area / Location — Canggu, Pererenan, Ubud, Uluwatu и т.д.
-        # Обычно в заголовке или в отдельном блоке
         area_match = response.css("::text").re_first(
             r'(Canggu|Pererenan|Ubud|Seminyak|Uluwatu|Sanur|Jimbaran|Tabanan|Denpasar|Kuta)'
         )
